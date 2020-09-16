@@ -1,6 +1,8 @@
 # Plankton
 
-[![Build Status](https://travis-ci.org/meshmash/Plankton.svg?branch=master)](https://travis-ci.org/meshmash/Plankton)
+## Plankton For Unity
+
+This is a quick fork I created to add some features to help Plankton integrate with Unity.
 
 ## Description
 
