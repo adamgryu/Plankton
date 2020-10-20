@@ -2,8 +2,8 @@
 
 This is a quick fork I created to add some features to help Plankton integrate with Unity.
 
-* I added Plankton Vertex Data to preserve vertex information such as UVs and Normals.
-* I added some non-allocating versions of circulator functions to improve performance and GC in runtime Unity games.
+* I added PlanktonVertexData.cs to preserve vertex information such as UVs and Normals.
+* I added some non-allocating versions of various helper functions to improve performance and GC in runtime Unity games.
 * I added PlanktonTools.cs which includes some helper functions to get started, such as converting between Unity and Plankton.
 
 # Plankton
