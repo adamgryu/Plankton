@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Plankton
 {
@@ -192,6 +193,12 @@ namespace Plankton
         {
             return this == vector;
         }
+
+        #region unity
+
+        public static implicit operator Vector3(PlanktonXYZ v) => new Vector3(v.X, v.Y, v.Z);
+
+        #endregion
     }
 }
 

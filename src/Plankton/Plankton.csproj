@@ -29,7 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-	<DocumentationFile>..\..\bin\Release\Plankton.xml</DocumentationFile>
+    <DocumentationFile>..\..\bin\Release\Plankton.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -37,6 +37,9 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\..\..\Program Files\Unity\Hub\Editor\2019.4.1f1\Editor\Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PlanktonFace.cs" />
@@ -45,9 +48,11 @@
     <Compile Include="PlanktonHalfedgeList.cs" />
     <Compile Include="PlanktonMesh.cs" />
     <Compile Include="PlanktonVertex.cs" />
+    <Compile Include="PlanktonVertexData.cs" />
     <Compile Include="PlanktonVertexList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PlanktonXYZ.cs" />
+    <Compile Include="Unity\PlanktonTools.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

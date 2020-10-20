@@ -19,6 +19,9 @@ namespace Plankton
         /// </summary>
         public PlanktonMesh()
         {
+            _vertices = new PlanktonVertexList(this);
+            _halfedges = new PlanktonHalfEdgeList(this);
+            _faces = new PlanktonFaceList(this);
         }
 
         /// <summary>
@@ -293,6 +296,16 @@ namespace Plankton
             this.Vertices.CompactHelper();
             this.Faces.CompactHelper();
             this.Halfedges.CompactHelper();
+        }
+
+        /// <summary>
+        /// Clone the data structure without trigging a costly rebuild operation and garbage collection.
+        /// </summary>
+        public void CopyInto(PlanktonMesh clone)
+        {
+            this.Vertices.CopyInto(clone._vertices);
+            this.Halfedges.CopyInto(clone._halfedges);
+            this.Faces.CopyInto(clone._faces);
         }
 
         //dihedral angle for an edge

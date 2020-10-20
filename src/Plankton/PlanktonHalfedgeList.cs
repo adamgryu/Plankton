@@ -120,6 +120,29 @@ namespace Plankton
         }
         #endregion
 
+        internal void CopyInto(PlanktonHalfEdgeList clone) {
+            int min = Math.Min(this._list.Count, clone._list.Count);
+            for (int i = 0; i < min; i++) {
+                clone._list[i].NextHalfedge = this._list[i].NextHalfedge;
+                clone._list[i].PrevHalfedge = this._list[i].PrevHalfedge;
+                clone._list[i].AdjacentFace = this._list[i].AdjacentFace;
+                clone._list[i].StartVertex = this._list[i].StartVertex;
+            }
+            if (clone._list.Count < this._list.Count) {
+                for (int i = min; i < this._list.Count; i++) {
+                    var e = new PlanktonHalfedge();
+                    e.NextHalfedge = this._list[i].NextHalfedge;
+                    e.PrevHalfedge = this._list[i].PrevHalfedge;
+                    e.AdjacentFace = this._list[i].AdjacentFace;
+                    e.StartVertex = this._list[i].StartVertex;
+                    clone._list.Add(e);
+                }
+            } else if (clone._list.Count > this._list.Count) {
+                int marker = this._list.Count;
+                clone._list.RemoveRange(marker, clone._list.Count - marker);
+            }
+        }
+
         /// <summary>
         /// Helper method to remove dead halfedges from the list, re-index and compact.
         /// </summary>
@@ -235,6 +258,27 @@ namespace Plankton
                 if (end == this[this.GetPairHalfedge(h)].StartVertex)
                     return h;
             }
+            return -1;
+        }
+
+        public int FindHalfedgeNonAlloc(int start, int end)
+        {
+            int halfedgeIndex = _mesh.Vertices[start].OutgoingHalfedge;
+            if (halfedgeIndex < 0 || halfedgeIndex > this.Count) {
+                return -1;
+            }
+
+            int h = halfedgeIndex;
+            int count = 0;
+            do {
+                if (end == this[this.GetPairHalfedge(h)].StartVertex) {
+                    return h;
+                }
+                h = this[this.GetPairHalfedge(h)].NextHalfedge;
+                if (h < 0) { throw new InvalidOperationException("Unset index, cannot continue."); }
+                if (count++ > 999) { throw new InvalidOperationException("Runaway vertex circulator"); }
+            } while (h != halfedgeIndex);
+
             return -1;
         }
 
@@ -551,7 +595,7 @@ namespace Plankton
             if (f != -1 && fs[f].FirstHalfedge == index)
                 fs[f].FirstHalfedge = next;
             if (f_pair != -1 && fs[f_pair].FirstHalfedge == pair)
-                fs[f_pair].FirstHalfedge = h_rtn;
+                fs[f_pair].FirstHalfedge = this[pair].NextHalfedge;
             
             // If either adjacent face was triangular it will now only have two sides. If so,
             // try to merge faces into whatever is on the RIGHT of the associated halfedge.

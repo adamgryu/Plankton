@@ -1,27 +1,35 @@
 ﻿using System;
+using UnityEngine;
 
-namespace Plankton
-{
+namespace Plankton {
     /// <summary>
     /// Represents a vertex in Plankton's halfedge mesh data structure.
     /// </summary>
-    public class PlanktonVertex
-    {
+    public partial class PlanktonVertex {
+
         public int OutgoingHalfedge;
-        
-        internal PlanktonVertex()
-        {
+
+        public PlanktonVertexData data;
+
+        internal PlanktonVertex() {
             this.OutgoingHalfedge = -1;
         }
-        
-        internal PlanktonVertex(float x, float y, float z)
+
+        internal PlanktonVertex(float x, float y, float z, PlanktonVertexData data)
         {
             OutgoingHalfedge = -1;
             this.X = x;
             this.Y = y;
             this.Z = z;
+            this.data = data;
         }
-        
+
+        internal PlanktonVertex(float x, float y, float z)
+            : this(x, y, z, new PlanktonVertexData())
+        {
+
+        }
+
         internal PlanktonVertex(double x, double y, double z)
             : this((float) x, (float) y, (float) z)
         {
@@ -54,5 +62,11 @@ namespace Plankton
         
         [Obsolete()]
         public bool Dead { get { return this.IsUnused; } }
+
+        #region unity
+
+        public static implicit operator Vector3(PlanktonVertex v) => new Vector3(v.X, v.Y, v.Z);
+
+        #endregion
     }
 }

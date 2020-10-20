@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 //using Rhino.Geometry;
 
@@ -12,6 +13,8 @@ namespace Plankton
     /// </summary>
     public class PlanktonFaceList : IEnumerable<PlanktonFace>
     {
+        public static List<int> INDEX_BUFFER = new List<int>(10);
+
         private readonly PlanktonMesh _mesh;
         private List<PlanktonFace> _list;
         
@@ -61,12 +64,18 @@ namespace Plankton
         {
             // This method always ensures that if a vertex lies on a boundary,
             // vertex -> outgoingHalfedge -> adjacentFace == -1
-            
-            int[] array = indices.ToArray(); // using Linq for convenience
+
+            // Use a buffer to avoid reallocation.
+            INDEX_BUFFER.Clear();
+            foreach (int index in indices) {
+                INDEX_BUFFER.Add(index);
+            }
+
+            List<int> array = INDEX_BUFFER;
             
             var hs = _mesh.Halfedges;
             var vs = _mesh.Vertices;
-            int n = array.Length;
+            int n = array.Count;
             
             // Don't allow degenerate faces
             if (n < 3) return -1;
@@ -94,7 +103,7 @@ namespace Plankton
                 int v1 = array[i], v2 = array[ii];
 
                 // Find existing edge, if it exists
-                int h = hs.FindHalfedge(v1, v2);
+                int h = hs.FindHalfedgeNonAlloc(v1, v2);
                 if (h < 0)
                     // No halfedge found, mark for creation
                     is_new[i] = true;
@@ -323,6 +332,22 @@ namespace Plankton
         }
         #endregion
 
+        internal void CopyInto(PlanktonFaceList clone) {
+            int min = Math.Min(this._list.Count, clone._list.Count);
+            for (int i = 0; i < min; i++) {
+                clone._list[i].FirstHalfedge = this._list[i].FirstHalfedge;
+            }
+            if (clone._list.Count < this._list.Count) {
+                for (int i = min; i < this._list.Count; i++) {
+                    var f = new PlanktonFace(this._list[i].FirstHalfedge);
+                    clone._list.Add(f);
+                }
+            } else if (clone._list.Count > this._list.Count) {
+                int marker = this._list.Count;
+                clone._list.RemoveRange(marker, clone._list.Count - marker);
+            }
+        }
+
         /// <summary>
         /// Helper method to remove dead faces from the list, re-index and compact.
         /// </summary>
@@ -343,10 +368,17 @@ namespace Plankton
 
                         // Update all halfedges which are adjacent
                         int first = _list[marker].FirstHalfedge;
-                        foreach (int h in _mesh.Halfedges.GetFaceCirculator(first))
-                        {
+
+                        // ADAM: Inlined this to save GC: GetFaceCirculator()
+                        int h = first;
+                        int count = 0;
+                        do {
                             _mesh.Halfedges[h].AdjacentFace = marker;
+                            h = _mesh.Halfedges[h].NextHalfedge;
+                            if (h < 0) { throw new InvalidOperationException("Unset index, cannot continue."); }
+                            if (count++ > 999) { throw new InvalidOperationException("Runaway face circulator."); }
                         }
+                        while (h != first);
                     }
                     marker++; // That spot's filled. Advance the marker.
                 }
@@ -391,6 +423,28 @@ namespace Plankton
             return _mesh.Halfedges.GetFaceCirculator(this[f].FirstHalfedge).ToArray();
         }
 
+        public int GetHalfedgesNonAlloc(int faceIndex, int[] outEdges)
+        {
+            int halfedgeIndex = this[faceIndex].FirstHalfedge;
+            if (halfedgeIndex < 0) {
+                return 0;
+            }
+
+            int h = halfedgeIndex;
+            for (int i = 0; i < outEdges.Length; i++) {
+                outEdges[i] = h;
+                h = _mesh.Halfedges[h].NextHalfedge;
+                if (h == halfedgeIndex) {
+                    return i + 1;
+                }
+                if (h < 0) {
+                    throw new InvalidOperationException("Unset index, cannot continue.");
+                }
+            }
+
+            return 3;
+        }
+
         /// <summary>
         /// Gets vertex indices of a face.
         /// </summary>
@@ -401,6 +455,28 @@ namespace Plankton
         {
             return _mesh.Halfedges.GetFaceCirculator(this[f].FirstHalfedge)
                 .Select(h => _mesh.Halfedges[h].StartVertex).ToArray();
+        }
+
+        public int GetFaceVerticesNonAlloc(int faceIndex, int[] outVertices)
+        {
+            int halfedgeIndex = this[faceIndex].FirstHalfedge;
+            if (halfedgeIndex < 0) {
+                return 0;
+            }
+
+            int h = halfedgeIndex;
+            for (int i = 0; i < outVertices.Length; i++) {
+                outVertices[i] = _mesh.Halfedges[h].StartVertex;
+                h = _mesh.Halfedges[h].NextHalfedge;
+                if (h == halfedgeIndex) {
+                    return i + 1;
+                }
+                if (h < 0) {
+                    throw new InvalidOperationException("Unset index, cannot continue.");
+                }
+            }
+
+            return 3;
         }
 
         [Obsolete("GetVertices is deprecated, please use GetFaceVertices instead.")]
